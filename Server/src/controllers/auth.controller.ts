@@ -3,10 +3,11 @@ import {Request} from "express";
 import {Response} from "express";
 import {loginUserSchema, registerUserSchema} from "../validation/user.validation";
 import {ApiError} from "../utils/ApiError";
-import User from "../models/user.model";
+import { User } from "../models/user.model";
 import {ApiResponse} from "../utils/ApiResponse";
 import {Types} from "mongoose";
 import jwt from "jsonwebtoken";
+import cloudinary from "../utils/Cloudinary";
 
 const generateToken = (userId: Types.ObjectId, res: Response) => {
     // token generation logic here
@@ -131,4 +132,30 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
     )
 });
 
-export {loginUser, registerUser, logoutUser};
+const updateProfile = asyncHandler(async(req, res) => {
+    //Get the pic and user id
+    const { profilePic } = req.body;
+    const userId = req.user?._id;
+
+    if(!profilePic){
+        throw new ApiError(400 , "Profile picture is required")
+    }
+
+    //Upload on cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+    //Update the user and set the pic by {new:true}
+    const updatedUser = await User.findByIdAndUpdate(userId, {profilePic : uploadResponse.secure_url}, {new: true})
+
+    //Return response
+    res.status(200).json(new ApiResponse(200 ,updatedUser, "Profile picture updated"))
+})
+
+const checkAuth = asyncHandler(async(req, res) => {
+    res.status(200).json(new ApiResponse(
+        200,
+        req.user
+    ))
+})
+
+export {loginUser, registerUser, logoutUser, updateProfile, checkAuth};

@@ -15,6 +15,7 @@ interface SignupInput {
     email: string;
     password: string;
 }
+
 interface SigninInput {
     email: string;
     password: string;
@@ -26,12 +27,13 @@ interface AuthState {
     isLogging: boolean;
     isUpdatingProfile: boolean;
     isCheckingAuth: boolean;
+    onlineUsers: string[]; 
 
     checkAuth: () => Promise<void>;
     signup: (data: SignupInput) => Promise<void>;
     logout: () => Promise<void>;
     login: (data: SigninInput) => Promise<void>;
-    updateProfile: (data: string) => Promise<void>;
+    updateProfile: (data: {profilePic: string}) => Promise<void>; 
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -40,11 +42,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     isLogging: false,
     isUpdatingProfile: false,
     isCheckingAuth: true,
+    onlineUsers: [], 
 
     checkAuth: async () => {
         try {
             const res = await axiosInstance.get("/auth/check");
-            set({authUser: res.data});
+            set({authUser: res.data.data.user}); 
         } catch (error) {
             console.error("Error in checkAuth:", error);
             set({authUser: null});
@@ -58,7 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const res = await axiosInstance.post("/auth/register", data);
             toast.success("Account created successfully");
-            set({authUser: res.data});
+            set({authUser: res.data.data.user});
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Signup failed");
         } finally {
@@ -71,7 +74,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const res = await axiosInstance.post("/auth/login", data);
             toast.success("Login successful");
-            set({authUser: res.data});
+            set({authUser: res.data.data.user}); 
         } catch (error: any) {
             toast.error(error?.response?.data?.message);
         } finally {
@@ -89,16 +92,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    updateProfile: async(data) => {
-        set({isUpdatingProfile: true})
+    updateProfile: async (data) => {
+        set({isUpdatingProfile: true});
         try {
-            const res = await axiosInstance.put("auth/update-profile", data)
-            set({authUser: res.data})
-            toast.success("Profile updated sudccessfully")
+            const res = await axiosInstance.put("/auth/update-profile", data); 
+            set({authUser: res.data.data.user}); 
+            toast.success("Profile updated successfully"); 
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Upload failed");
-        }finally{
-            set({isUpdatingProfile: false})
+        } finally {
+            set({isUpdatingProfile: false});
         }
-    }
+    },
 }));

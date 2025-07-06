@@ -1,8 +1,8 @@
 import { create } from "zustand"
 
 interface ThemeState {
-    theme: string,
-    setTheme: (data: string) => void,
+    theme: string;
+    setTheme: (data: string) => void;
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
